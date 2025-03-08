@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eGov Presentation</title>
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      background: black; 
+      color: white; 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+    }
+    /* Center all text elements */
+    .slide p, .slide span, .slide div.subtext { 
+      text-align: center; 
+      display: block;
+    }
+    .slide { 
+      display: none; 
+      position: absolute; 
+      width: 100%; 
+      height: 100%; 
+      justify-content: flex-start; 
+      align-items: center; 
+      flex-direction: column; 
+      padding-top: 50px; 
+    }
+    .active { display: flex; }
+    canvas { position: absolute; }
+    h1 { font-size: 2.5em; }
+    p, span, div.subtext { font-size: 1.5em; max-width: 80%; }
+    .controls { 
+      position: absolute; 
+      bottom: 20px; 
+      width: 100%; 
+      display: flex; 
+      justify-content: center; 
+      gap: 20px; 
+    }
+    .button { 
+      background: white; 
+      color: black; 
+      font-size: 1.5em; 
+      padding: 10px 20px; 
+      border: none; 
+      cursor: pointer; 
+      width: 200px; 
+    }
+    .button:hover { background: gray; }
+    .thread-box {
+      text-align: center;
+      opacity: 0;
+      width: 15%;
+      display: inline-block;
+      vertical-align: top;
+      transition: opacity 2s ease-in-out;
+    }
+    .thread-box .subtext1 {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      text-align: center;
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    /* ===== Timeline CSS ===== */
+    .timeline-container {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+    }
+    .timeline-container::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background: #555;
+    }
+    .timeline-item {
+      position: absolute;
+      width: 150px;
+      text-align: center;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+    }
+    .timeline-item .dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin: 0 auto;
+      margin-bottom: -10px;
+    }
+    .timeline-item .text { width: 100%; text-align: center; }
+    .timeline-item .text h2 { font-size: 16px; margin: 5px 0; }
+    .timeline-item .subtext1 {
+      display: block;
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      margin: 0;
+    }
+    .timeline-item .text span { font-size: 14px; margin: 0; width: 100%; }
+    
+    @keyframes fadeIn { to { opacity: 1; } }
+    /* Stagger delays for timeline items */
+    .timeline-item:nth-child(1) { animation-delay: 0s; }
+    .timeline-item:nth-child(2) { animation-delay: 3s; }
+    .timeline-item:nth-child(3) { animation-delay: 5s; }
+    .timeline-item:nth-child(4) { animation-delay: 8s; }
+    .timeline-item:nth-child(5) { animation-delay: 11s; }
+    .timeline-item:nth-child(6) { animation-delay: 14s; }
+    .timeline-item:nth-child(7) { animation-delay: 17s; }
+    .timeline-item:nth-child(8) { animation-delay: 20s; }
+    .timeline-item:nth-child(9) { animation-delay: 23s; }
+    /* Dot colors are transparent so decoration stands out */
+    .orange .dot, .red .dot, .green .dot { background: transparent; }
+    
+    /* ===== Decorations (timeline decorations code) ===== */
+    .decoration.dept-lines { display: flex; justify-content: center; gap: 2px; margin-bottom: 4px; }
+    .decoration.dept-lines .line { width: 2px; height: 15px; background: white; }
+    
+    .decoration.city-scale { display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
+    .decoration.city-scale .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; margin-bottom: 2px;
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.city-scale .small-square { width: 20px; height: 20px; background: white; }
+    
+    .decoration.state-scale { display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
+    .decoration.state-scale .white-circle-row { display: flex; gap: 4px; margin-bottom: 2px; }
+    .decoration.state-scale .white-circle-row .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white;
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.state-scale .large-square { width: 40px; height: 40px; background: white; }
+    
+    .decoration.failure { 
+      display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; position: relative; 
+    }
+    .decoration.failure .white-circle-row { display: flex; gap: 4px; margin-bottom: 2px; }
+    .decoration.failure .white-circle-row .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.failure .overlay { 
+      position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; pointer-events: none; 
+    }
+    .decoration.failure .overlay .red-cross { 
+      color: red; font-weight: bold; font-size: 10px; line-height: 10px; margin-bottom: 2px; 
+    }
+    .decoration.failure .overlay .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.failure .large-square { width: 40px; height: 40px; background: white; }
+    
+    .decoration.rearchitected { 
+      display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; 
+    }
+    .decoration.rearchitected .green-grid { 
+      display: grid; grid-template-columns: repeat(3, 20px); gap: 2px; 
+    }
+    .decoration.rearchitected .green-grid .green-box { 
+      width: 20px; height: 20px; background: white; 
+    }
+    
+    .decoration.exemplification { 
+      display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; 
+    }
+    .decoration.exemplification .yellow-single { margin-bottom: 2px; }
+    .decoration.exemplification .yellow-single .yellow-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.exemplification .white-circle-row { 
+      display: flex; gap: 4px; margin-bottom: 2px; 
+    }
+    .decoration.exemplification .white-circle-row .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white;
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.exemplification .green-grid { 
+      display: grid; grid-template-columns: repeat(3, 20px); gap: 2px; 
+    }
+    .decoration.exemplification .green-grid .green-box { 
+      width: 20px; height: 20px; background: white; 
+    }
+    
+    .decoration.domino { 
+      display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; 
+    }
+    .decoration.domino .yellow-circle-row { 
+      display: flex; gap: 4px; margin-bottom: 2px; 
+    }
+    .decoration.domino .yellow-circle-row .yellow-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.domino .white-circle-row { 
+      display: flex; gap: 4px; margin-bottom: 4px; 
+    }
+    .decoration.domino .white-circle-row .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.domino .green-grid { 
+      display: grid; grid-template-columns: repeat(3, 20px); gap: 2px; 
+    }
+    .decoration.domino .green-grid .green-box { 
+      width: 20px; height: 20px; background: white; 
+    }
+    
+    .decoration.institutionalisation { 
+      display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; 
+    }
+    .decoration.institutionalisation .dollar-row { 
+      display: flex; gap: 4px; margin-bottom: 2px; font-size: 14px; color: lime; 
+    }
+    .decoration.institutionalisation .yellow-circle-row { 
+      display: flex; gap: 4px; margin-bottom: 2px; 
+    }
+    .decoration.institutionalisation .yellow-circle-row .yellow-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.institutionalisation .white-circle-row { 
+      display: flex; gap: 4px; margin-bottom: 4px; 
+    }
+    .decoration.institutionalisation .white-circle-row .white-circle { 
+      width: 10px; height: 10px; border-radius: 50%; background: white; 
+      display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; 
+    }
+    .decoration.institutionalisation .green-grid { 
+      display: grid; grid-template-columns: repeat(3, 20px); gap: 2px; 
+    }
+    .decoration.institutionalisation .green-grid .green-box { 
+      width: 20px; height: 20px; background: white; 
+    }
+    .additional-info {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 50px;
+    }
+
+    .left-column, .right-column {
+      width: 50%;
+      text-align: center;
+    }
+
+    /* Animation keyframes */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Large goal text on the left */
+    .goal {
+      font-size: 3em;
+      font-weight: bold;
+      opacity: 0;
+      animation: fadeInUp 1s forwards;
+      animation-delay: 1s;
+      margin-bottom: 20px;
+    }
+
+    /* Initiatives on the right */
+    .initiative {
+      font-size: 1.5em;
+      opacity: 0;
+      animation: fadeInUp 1s forwards;
+      margin: 10px 0;
+    }
+
+    .initiative:nth-child(1) {
+      animation-delay: 1.5s;
+    }
+    .initiative:nth-child(2) {
+      animation-delay: 2s;
+    }
+    .initiative:nth-child(3) {
+      animation-delay: 2.5s;
+    }
+
+    /* Slide 5: DIGIT Diagram Styles */
+    #slide5 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding-top: 50px;
+      box-sizing: border-box;
+    }
+    #slide5 h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    #slide5 .subtext {
+      font-size: 1.2em;
+      max-width: 80%;
+      margin: 0 auto 40px;
+    }
+    .digit-diagram {
+      width: 80%;
+      margin: 0 auto;
+      position: relative;
+      padding-bottom: 80px;
+    }
+    .people-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+      animation-delay: 7s;
+    }
+
+    .channel-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+      animation-delay: 5s;
+    }
+
+    .channel-box {
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      text-align: center;
+      color: black;
+    }
+
+    .sector-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+      animation-delay: 3s;
+    }
+    .sector-box {
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      text-align: center;
+      color: black;
+    }
+    .digit-box {
+      width: 100%;
+      background: white;
+      color: black;
+      padding: 20px;
+      box-sizing: border-box;
+      position: relative;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+      animation-delay: 1s;
+      margin-bottom: 20px;
+    }
+    .digit-label {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+      animation-delay: 1.5s;
+    }
+    .services {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .services-row {
+      padding-top: 20px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 5px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+    }
+    .services-row.common-services {
+      animation-delay: 2s;
+    }
+    .services-row.data-registries {
+      animation-delay: 2.5s;
+    }
+    .service-box {
+      background: black;
+      color: white;
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 5px;
+      font-size: 0.9em;
+      box-sizing: border-box;
+    }
+    .row-label {
+      font-weight: 800;
+      width: 100%;
+      text-align: center;
+      font-size: 1em;
+      margin-top: 10px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+    }
+    .row-label.common-label {
+      animation-delay: 2.2s;
+    }
+    .row-label.data-label {
+      animation-delay: 2.7s;
+    }
+
+    #slide6 .numbers { display: flex; justify-content: center; gap: 50px; margin-top: 40px; }
+    #slide6 .number-item { opacity: 0; animation: fadeIn 3s forwards; }
+    #slide6 .number { font-size: 3em; font-weight: bold; }
+    #slide6 .label { font-size: 1em; }
+    #slide6 .boxes { display: flex; justify-content: center; gap: 20px; margin-top: 40px; opacity: 0; animation: fadeIn 3s forwards;}
+    #slide6 .box { background: #222; padding: 20px; border-radius: 8px; width: 28%; }
+    #slide6 .wide-box { width: 90%; margin: 40px auto 0 auto; background: #333; padding: 20px; border-radius: 8px; opacity: 0; animation: fadeIn 3s forwards;}
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+
+  </style>
+</head>
+<body>
+  <!-- Slide 0: eGov Logo -->
+  <div class="slide active" id="slide0">
+    <img id="egovLogo" src="./images/egov-logo.png" alt="eGov Logo">
+  </div>
+
+  <!-- Slide 1: eGov’s Vision and Mission -->
+  <div class="slide active" id="slide1">
+    <h1>eGov’s Vision and Mission</h1>
+    <p>
+      At eGov, we envision a future where public service delivery is inclusive, accessible, and citizen‑centric.
+    </p>
+    <div class="additional-info">
+      <div class="left-column">
+        <div class="goal">Catalyze digital transformation in 30 countries by 2030</div>
+      </div>
+      <div class="right-column">
+        <div class="initiative">Building Digital Public Goods</div>
+        <div class="initiative">Enhancing Local Capacity</div>
+        <div class="initiative">Activating Markets</div>
+      </div>
+    </div>
+  </div> 
+
+  <!-- Slide 2: eGov Journey (Timeline) -->
+  <div class="slide" id="slide2">
+    <h1>eGov Journey</h1>
+    <span>Scale What Works to Build for Scale</span>
+    <div class="timeline-container">
+      <div class="timeline-item orange" style="left: 1%; bottom: 20%;">
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Founded in 2003</h2>
+          <div class="subtext1">By Nandan Nilekani and Srikanth Nadhamuni</div>
+        </div>
+      </div>
+      <div class="timeline-item orange" style="left: 12%; bottom: 21%;">
+        <div class="decoration dept-lines">
+          <div class="line"></div>
+          <div class="line"></div>
+          <div class="line"></div>
+          <div class="line"></div>
+          <div class="line"></div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Department Scale</h2>
+          <div class="subtext1">Building vertical solutions for departments in various cities.</div>
+        </div>
+      </div>
+      <div class="timeline-item orange" style="left: 23%; bottom: 22%;">
+        <div class="decoration city-scale">
+          <div class="white-circle">c</div>
+          <div class="small-square"></div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>City Scale</h2>
+          <div class="subtext1">Built city wide ERP at Chennai Corporation servicing 10Million people.</div>
+        </div>
+      </div>
+      <div class="timeline-item orange" style="left: 34%; bottom: 25%;">
+        <div class="decoration state-scale">
+          <div class="white-circle-row">
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+          </div>
+          <div class="large-square"></div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Multiple Cities</h2>
+          <div class="subtext1">Built shared infrastructure for 125 city bodies in Andhra Pradesh.</div>
+        </div>
+      </div>
+      <div class="timeline-item red" style="left: 45%; bottom: 24%;">
+        <div class="decoration failure">
+          <div class="white-circle-row">
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+          </div>
+          <div class="overlay">
+            <div class="red-cross">X</div>
+            <div class="white-circle">p</div>
+          </div>
+          <div class="large-square"></div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Failed to Replicate</h2>
+          <div class="subtext1">Tried replicating with partners but multiple failures as ERP approach had huge dependency on eGov.</div>
+        </div>
+      </div>
+      <div class="timeline-item green" style="left: 56%; bottom: 30%;">
+        <div class="decoration rearchitected">
+          <div class="green-grid">
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+          </div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Rearchitected</h2>
+          <div class="subtext1">To Open Source Modular Stack Based Architecture and focus on partner enablement</div>
+        </div>
+      </div>
+      <div class="timeline-item green" style="left: 68%; bottom: 40%;">
+        <div class="decoration exemplification">
+          <div class="yellow-single">
+            <div class="yellow-circle">p</div>
+          </div>
+          <div class="white-circle-row">
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+          </div>
+          <div class="green-grid">
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+          </div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Exemplification</h2>
+          <div class="subtext1">Punjab deploys 5 services in 90 days.</div>
+        </div>
+      </div>
+      <div class="timeline-item green" style="left: 78%; bottom: 42%;">
+        <div class="decoration domino">
+          <div class="yellow-circle-row">
+            <div class="yellow-circle">p</div>
+            <div class="yellow-circle">p</div>
+            <div class="yellow-circle">p</div>
+          </div>
+          <div class="white-circle-row">
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+          </div>
+          <div class="green-grid">
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+          </div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Network Effect</h2>
+          <div class="subtext1">BEL deploys in 65 Cantonment Boards, PwC in Odisha, Deloitte in Jharkhand etc.</div>
+        </div>
+      </div>
+      <div class="timeline-item green" style="left: 89%; bottom: 50%;">
+        <div class="decoration institutionalisation">
+          <div class="dollar-row">
+            <div class="dollar-sign">$</div>
+            <div class="dollar-sign">$</div>
+            <div class="dollar-sign">$</div>
+          </div>
+          <div class="yellow-circle-row">
+            <div class="yellow-circle">p</div>
+            <div class="yellow-circle">p</div>
+            <div class="yellow-circle">p</div>
+          </div>
+          <div class="white-circle-row">
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+            <div class="white-circle">c</div>
+          </div>
+          <div class="green-grid">
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+            <div class="green-box"></div>
+          </div>
+        </div>
+        <div class="dot"></div>
+        <div class="text">
+          <h2>Institutionalisation</h2>
+          <div class="subtext1">National government adopts DIGIT Urban as National Urban Governance Platform for rollout across 5000 cities and commits budgets.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Slide 3: Catalysis - The Five Thread Approach -->
+  <div class="slide" id="slide3">
+    <h1>Catalysis - The Five Thread Approach</h1>
+    <p>Create momentum in the system to drive change at speed and scale by reducing risk, cost and effort.</p>
+    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; align-items: flex-start; min-height: 60vh;">
+      <div class="thread-box">
+        <img src="./images/shared-reimagination.png" alt="Shared Reimagination" width="200">
+        <h2>Shared Reimagination</h2>
+        <div class="subtext1">Reimagine the future of public service delivery with diverse set of stakeholders from government, markets, academia and civil society.</div>
+      </div>
+      <div class="thread-box">
+        <img src="./images/exemplification.png" alt="Exemplification" width="200">
+        <h2>Scale and Speed Exemplification</h2>
+        <div class="subtext1">Rapid implementation impacting around 30M population to build momentum.</div>
+      </div>
+      <div class="thread-box">
+        <img src="./images/build-dpg.png" alt="Digital Public Goods" width="200">
+        <h2>Build Digital Public Goods</h2>
+        <div class="subtext1">Document the policy & process changes and program experience. Solution is productized. These reduce risk, cost and effort required for replication.</div>
+      </div>
+      <div class="thread-box">
+        <img src="./images/scaling-network.png" alt="Scaling Networks" width="200">
+        <h2>Scale </br> Networks</h2>
+        <div class="subtext1">Enable partners to replicate and build new use cases through training, workshops, and long-term platform support.</div>
+      </div>
+      <div class="thread-box">
+        <img src="./images/sustainable-institutionalisation.png" alt="Sustainable Institutionalisation" width="200">
+        <h2>Sustainable Institutionalisation</h2>
+        <div class="subtext1">Work with stakeholders to ensure long-term sustainability.</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Slide 4: The Domino Effect with Graph Animation -->
+  <div class="slide" id="slide4">
+    <h1>The Network Effect</h1>
+    <p>
+      As new partners join the network, they replicate existing products &amp; solutions in new geographies and build new products &amp; solutions in new sectors on the DIGIT Platform creating a network effect.
+    </p>
+    <!-- Graph Animation Canvas on the right; shifted down by 20px -->
+    <canvas id="graphCanvas" style="left: 100px; top: calc(50% + 50px); transform: translateY(-50%);"></canvas>
+    <!-- Domino Effect Canvas remains on the left -->
+    <canvas id="dominoCanvas" style="right: 100px; top: 50%; transform: translateY(-50%);"></canvas>
+  </div>
+  
+  <!-- Slide 5: DIGIT Slide -->
+  <div class="slide" id="slide5">
+    <h1>DIGIT: The Operating System for Public Service Delivery</h1>
+    <p class="subtext">
+      DIGIT is an open‑source platform designed as shared infrastructure for governments to deliver secure, scalable, and cost‑effective public services. Its modular and interoperable architecture ensures seamless data exchange, enabling unified services, enhanced revenue, and coordinated governance.
+    </p>
+    <div class="digit-diagram">
+      <div class="people-row">
+        <div class="people-box">Citizens</div>
+        <div class="people-box">Front Line</div>
+        <div class="people-box">Vendors</div>
+        <div class="people-box">Employees</div>
+        <div class="people-box">Administrators</div>
+        <div class="people-box">...</div>
+      </div>
+      <div class="channel-row">
+        <div class="channel-box">Web Portal</div>
+        <div class="channel-box">Mobile App</div>
+        <div class="channel-box">Call Center</div>
+        <div class="channel-box">Service Counter</div>
+        <div class="channel-box">Chat</div>
+        <div class="channel-box">...</div>
+      </div>
+      <div class="sector-row">
+        <div class="sector-box">Urban Services</div>
+        <div class="sector-box">Water Services</div>
+        <div class="sector-box">Sanitation Services</div>
+        <div class="sector-box">Energy Services</div>
+        <div class="sector-box">Justice Services</div>
+        <div class="sector-box">...</div>
+      </div>
+      <div class="digit-box">
+        <div class="digit-label">DIGIT</div>
+        <div class="services">
+          <div class="services-row common-services">
+            <div class="service-box">Authenticate</div>
+            <div class="service-box">Authorise</div>
+            <div class="service-box">Encrypt</div>
+            <div class="service-box">Signed Audit</div>
+            <div class="service-box">Workflow</div>
+            <div class="service-box">Notification</div>
+            <div class="service-box">Payment</div>
+            <div class="service-box">File Store</div>
+            <div class="service-box">Exchange</div>
+            <div class="service-box">...</div>
+          </div>
+          <div class="row-label common-label">Shared Common Services</div>
+          <div class="services-row data-registries">
+            <div class="service-box">Individual</div>
+            <div class="service-box">Household</div>
+            <div class="service-box">Program</div>
+            <div class="service-box">Project</div>
+            <div class="service-box">Facility</div>
+            <div class="service-box">Asset</div>
+            <div class="service-box">Staff</div>
+            <div class="service-box">Vehicle</div>
+            <div class="service-box">Inventory</div>
+            <div class="service-box">...</div>
+          </div>
+          <div class="row-label data-label">Shared Data Registries</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 6: Impact Slide -->
+  <div class="slide" id="slide6">
+    <h1>Impact Achieved Through Our Approach</h1>
+    <p>Over the past two decades, eGov’s strategic approach has led to the following impacts:</p>
+
+    <div class="numbers">
+        <div class="number-item" style="animation-delay: 0.5s;">
+            <div class="number">10</div>
+            <div class="label">Countries</div>
+        </div>
+        <div class="number-item" style="animation-delay: 1s;">
+            <div class="number">19</div>
+            <div class="label">States</div>
+        </div>
+        <div class="number-item" style="animation-delay: 1.5s;">
+            <div class="number">2,000+</div>
+            <div class="label">Cities</div>
+        </div>
+        <div class="number-item" style="animation-delay: 2s;">
+            <div class="number">24,000+</div>
+            <div class="label">Villages</div>
+        </div>
+    </div>
+
+    <div class="boxes">
+        <div class="box">
+            <h2>Service Delivery</h2>
+            <div class="box-content">Several governments use DIGIT platform to issue licenses and permits, certificates, manage uitlity connection, public works and distribute benefits.</div>
+        </div>
+        <div class="box">
+            <h2>Grievance Resolution</h2>
+            <div class="box-content">DIGIT is now being used to develop the new Grievance Redressal System for all central ministries in India.</div>
+        </div>
+        <div class="box">
+            <h2>Faster Payments</h2>
+            <div class="box-content">For livehood programs like Odisha's Mukta, we have expedited payment processes, ensuring timely disbursements and financial inclusion for beneficiaries.</div>
+        </div>
+        <div class="box">
+          <h2>Revenue Mobilisation</h2>
+          <div class="box-content">250% increase in revenue mobilisation in Andhra Pradesh using the DIGIT Platform</div>
+      </div>
+  </div>
+
+    <div class="wide-box">
+        <h2>Capacity Building</h2>
+        <div class="box-content">We have delivered over 58,000 hours of training, empowering more than 600 developers and numerous government officials to effectively use and expand our platforms through eGov Academy.</div>
+    </div>
+  </div>
+
+  <div class="slide" id="slide6">
+    <h1>Thank You!</h1>
+    <p>For more information, visit <a style="color: white" ="https://egov.org.in" target="_blank">www.egov.org</a></p>
+  </div>
+  
+  <div class="controls">
+    <button class="button" id="prevBtn">Previous</button>
+    <button class="button" id="nextBtn">Next</button>
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const slides = document.querySelectorAll(".slide");
+      let currentSlide = 0;
+  
+      function resetSlideParagraphs(slide) {
+        const spans = slide.getElementsByTagName("span");
+        for (let i = 0; i < spans.length; i++) {
+          spans[i].style.opacity = "0";
+          spans[i].style.transition = "none";
+        }
+        const paragraphs = slide.getElementsByTagName("p");
+        for (let i = 0; i < paragraphs.length; i++) {
+          paragraphs[i].style.opacity = "0";
+          paragraphs[i].style.transition = "none";
+        }
+      }
+  
+      function fadeInSlideParagraphs(slide) {
+        const spans = slide.getElementsByTagName("span");
+        for (let i = 0; i < spans.length; i++) {
+          spans[i].style.transition = "opacity 3s ease-in-out";
+          setTimeout(() => { spans[i].style.opacity = "1"; }, 300 * i);
+        }
+        const paragraphs = slide.getElementsByTagName("p");
+        for (let i = 0; i < paragraphs.length; i++) {
+          paragraphs[i].style.transition = "opacity 3s ease-in-out";
+          setTimeout(() => { paragraphs[i].style.opacity = "1"; }, 300 * i);
+        }
+      }
+  
+      function showSlide(index) {
+        slides.forEach((slide, i) => {
+          if (i === index) {
+            slide.classList.add("active");
+            fadeInSlideParagraphs(slide);
+            if (slide.id === "slide3") {
+              resetThreads();
+              setTimeout(fadeInThreads, 200);
+            }
+            if (slide.id === "slide4") {
+              setTimeout(() => { if (typeof startDominoEffect === 'function') { startDominoEffect(); } }, 500);
+              setTimeout(() => { if (typeof startGraphAnimation === 'function') { startGraphAnimation(); } }, 500);
+            }
+          } else {
+            slide.classList.remove("active");
+            resetSlideParagraphs(slide);
+          }
+        });
+        // Stop animations if slide 4 is not active
+        const slide4 = document.getElementById("slide4");
+        if (!slide4.classList.contains("active")) {
+          if (typeof stopDominoEffect === 'function') { stopDominoEffect(); }
+          if (typeof stopGraphAnimation === 'function') { stopGraphAnimation(); }
+        }
+      }
+  
+      function nextSlide() {
+        currentSlide = (currentSlide + 1) % slides.length;
+        showSlide(currentSlide);
+      }
+  
+      function prevSlide() {
+        currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+        showSlide(currentSlide);
+      }
+  
+      window.nextSlide = nextSlide;
+      window.prevSlide = prevSlide;
+  
+      function resetThreads() {
+        document.querySelectorAll(".thread-box").forEach(box => {
+          box.style.opacity = "0";
+          box.style.transition = "none";
+        });
+      }
+  
+      function fadeInThreads() {
+        const threadBoxes = document.querySelectorAll(".thread-box");
+        threadBoxes.forEach((box, index) => {
+          setTimeout(() => {
+            box.style.transition = "opacity 5s ease-in-out";
+            box.style.opacity = "1";
+          }, index * 5000);
+        });
+      }
+  
+      showSlide(currentSlide);
+  
+      document.getElementById("nextBtn").addEventListener("click", nextSlide);
+      document.getElementById("prevBtn").addEventListener("click", prevSlide);
+    });
+  </script>
+  
+  <!-- Domino Effect Script for Slide 4 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const dominoCanvas = document.getElementById("dominoCanvas");
+      dominoCanvas.width = window.innerWidth / 2;
+      dominoCanvas.height = window.innerHeight;
+      const dctx = dominoCanvas.getContext("2d");
+  
+      const gridSize = 8;
+      const brickSize = 20;
+      const spacing = 5;
+      let grid = [];
+      let dominoQueue = [];
+      let interval;
+  
+      function initDominoGrid() {
+        for (let i = 0; i < gridSize; i++) {
+          grid[i] = [];
+          for (let j = 0; j < gridSize; j++) {
+            grid[i][j] = { color: 'gray' };
+          }
+        }
+        drawDominoGrid();
+      }
+  
+      function drawDominoGrid() {
+        dctx.clearRect(0, 0, dominoCanvas.width, dominoCanvas.height);
+        const totalWidth = gridSize * brickSize + (gridSize - 1) * spacing;
+        const totalHeight = gridSize * brickSize + (gridSize - 1) * spacing;
+        const offsetX = (dominoCanvas.width - totalWidth) / 2 + 50;
+        const offsetY = (dominoCanvas.height - totalHeight) / 2 + 50;
+        for (let i = 0; i < gridSize; i++) {
+          for (let j = 0; j < gridSize; j++) {
+            dctx.fillStyle = grid[i][j].color;
+            dctx.fillRect(offsetX + i * (brickSize + spacing), offsetY + j * (brickSize + spacing), brickSize, brickSize);
+          }
+        }
+  
+        dctx.font = "16px Arial";
+        dctx.fillStyle = "white";
+        let xLabel = "New Geography";
+        let xTextWidth = dctx.measureText(xLabel).width;
+        let xLabelX = offsetX + totalWidth / 2 - xTextWidth / 2;
+        let xLabelY = offsetY - 25;
+        dctx.fillText(xLabel, xLabelX, xLabelY);
+
+        // Draw Y-axis label: "New Sector"
+        let yLabel = "New Sector";
+        dctx.save();
+        dctx.translate(offsetX - 25, offsetY + totalHeight / 2);
+        dctx.rotate(-Math.PI / 2);
+        let yTextWidth = dctx.measureText(yLabel).width;
+        dctx.fillText(yLabel, -yTextWidth / 2, 0);
+        dctx.restore();
+      }
+  
+      function triggerDominoEffect(x, y) {
+        if (grid[x][y].color === 'green') return;
+        grid[x][y].color = 'green';
+        drawDominoGrid();
+        if (x < gridSize - 1) dominoQueue.push([x + 1, y]);
+        if (y < gridSize - 1) dominoQueue.push([x, y + 1]);
+        if (x > 0) dominoQueue.push([x - 1, y]);
+        if (y > 0) dominoQueue.push([x, y - 1]);
+      }
+  
+      function processDominoQueue() {
+        if (dominoQueue.length > 0) {
+          let next = dominoQueue.shift();
+          triggerDominoEffect(next[0], next[1]);
+        } else {
+          clearInterval(interval);
+        }
+      }
+  
+      function startDominoEffect() {
+        dominoQueue = [];
+        clearInterval(interval);
+        triggerDominoEffect(0, 0);
+        interval = setInterval(processDominoQueue, 100);
+      }
+  
+      window.stopDominoEffect = function() {
+        clearInterval(interval);
+        dominoQueue = [];
+        initDominoGrid();
+      };
+  
+      window.startDominoEffect = startDominoEffect;
+      initDominoGrid();
+  
+      window.addEventListener("resize", function() {
+        dominoCanvas.width = window.innerWidth / 2;
+        dominoCanvas.height = window.innerHeight;
+        drawDominoGrid();
+      });
+    });
+  </script>
+  
+  <!-- Complete Graph Animation Script for Slide 4 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const graphCanvas = document.getElementById("graphCanvas");
+      graphCanvas.width = window.innerWidth / 2;
+      graphCanvas.height = window.innerHeight;
+      const gctx = graphCanvas.getContext("2d");
+      
+      // Data Structures for graph animation
+      function Node(id, x, y, type) {
+          this.id = id;
+          this.x = x;
+          this.y = y;
+          this.type = type;
+      }
+  
+      function Edge(source, target) {
+          this.source = source;
+          this.target = target;
+      }
+  
+      let graphNodes = [];
+      let graphEdges = [];
+  
+      function edgeExists(nodeA, nodeB) {
+          return graphEdges.some(edge => 
+              (edge.source === nodeA && edge.target === nodeB) ||
+              (edge.source === nodeB && edge.target === nodeA)
+          );
+      }
+  
+      function randomChoice(arr) {
+          return arr[Math.floor(Math.random() * arr.length)];
+      }
+  
+      // Drawing loop for graph animation
+      function drawGraph() {
+          gctx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+  
+          // Draw edges
+          gctx.strokeStyle = "white";
+          graphEdges.forEach(edge => {
+              gctx.beginPath();
+              gctx.moveTo(edge.source.x, edge.source.y);
+              gctx.lineTo(edge.target.x, edge.target.y);
+              gctx.stroke();
+          });
+  
+          // Draw nodes
+          graphNodes.forEach(node => {
+              gctx.beginPath();
+              gctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+              gctx.fillStyle = "white";
+              gctx.fill();
+              gctx.stroke();
+          });
+  
+          // Draw label "Partner Network" above the graph circle.
+          gctx.font = "16px Arial";
+          gctx.fillStyle = "white";
+          let label = "Partner Network";
+          let labelWidth = gctx.measureText(label).width;
+          let labelX = centerX - labelWidth / 2;
+          let labelY = centerY - nodeRadius - 25;
+          gctx.fillText(label, labelX, labelY);
+  
+          requestAnimationFrame(drawGraph);
+      }
+  
+      const centerX = graphCanvas.width / 2;
+      const centerY = graphCanvas.height / 2;
+      const centerNode = new Node("center", centerX, centerY, "center");
+  
+      // Reduced nodeRadius by 40% (multiplying by 0.6)
+      const nodeRadius = (Math.min(graphCanvas.width, graphCanvas.height) / 4) * 0.6;
+  
+      function initGraph() {
+          graphNodes = [];
+          graphEdges = [];
+          graphNodes.push(centerNode);
+      }
+  
+      let topCount = 0, bottomCount = 0;
+      const topTotal = 10, bottomTotal = 10;
+      function addTopNode(index) {
+          let angleDeg = 210 + (index * (120 / (topTotal - 1)));
+          let angleRad = angleDeg * Math.PI / 180;
+          let x = centerX + nodeRadius * Math.cos(angleRad);
+          let y = centerY + nodeRadius * Math.sin(angleRad);
+          let node = new Node("top" + index, x, y, "top");
+          graphNodes.push(node);
+          graphEdges.push(new Edge(centerNode, node));
+      }
+  
+      function addBottomNode(index) {
+          let angleDeg = 30 + (index * (120 / (bottomTotal - 1)));
+          let angleRad = angleDeg * Math.PI / 180;
+          let x = centerX + nodeRadius * Math.cos(angleRad);
+          let y = centerY + nodeRadius * Math.sin(angleRad);
+          let node = new Node("bottom" + index, x, y, "bottom");
+          graphNodes.push(node);
+          graphEdges.push(new Edge(centerNode, node));
+      }
+  
+      let leftCount = 0, rightCount = 0;
+      const leftTotal = 10, rightTotal = 10;
+      function addLeftNode(index) {
+          let angleDeg = 150 + (index * (60 / (leftTotal - 1)));
+          let angleRad = angleDeg * Math.PI / 180;
+          let x = centerX + nodeRadius * Math.cos(angleRad);
+          let y = centerY + nodeRadius * Math.sin(angleRad);
+          let node = new Node("left" + index, x, y, "left");
+          graphNodes.push(node);
+          let topNodes = graphNodes.filter(n => n.type === "top");
+          let bottomNodes = graphNodes.filter(n => n.type === "bottom");
+          if (topNodes.length > 0) {
+              graphEdges.push(new Edge(node, randomChoice(topNodes)));
+          }
+          if (bottomNodes.length > 0) {
+              graphEdges.push(new Edge(node, randomChoice(bottomNodes)));
+          }
+      }
+  
+      function addRightNode(index) {
+          let angleDeg = -30 + (index * (60 / (rightTotal - 1)));
+          let angleRad = angleDeg * Math.PI / 180;
+          let x = centerX + nodeRadius * Math.cos(angleRad);
+          let y = centerY + nodeRadius * Math.sin(angleRad);
+          let node = new Node("right" + index, x, y, "right");
+          graphNodes.push(node);
+          let topNodes = graphNodes.filter(n => n.type === "top");
+          let bottomNodes = graphNodes.filter(n => n.type === "bottom");
+          if (topNodes.length > 0) {
+              graphEdges.push(new Edge(node, randomChoice(topNodes)));
+          }
+          if (bottomNodes.length > 0) {
+              graphEdges.push(new Edge(node, randomChoice(bottomNodes)));
+          }
+      }
+  
+      function completeConnections() {
+          let missingEdges = [];
+          for (let i = 0; i < graphNodes.length; i++) {
+              for (let j = i + 1; j < graphNodes.length; j++) {
+                  if (!edgeExists(graphNodes[i], graphNodes[j])) {
+                      missingEdges.push({ a: graphNodes[i], b: graphNodes[j] });
+                  }
+              }
+          }
+          let connectionInterval = setInterval(() => {
+              if (missingEdges.length > 0) {
+                  let randomIndex = Math.floor(Math.random() * missingEdges.length);
+                  let pair = missingEdges[randomIndex];
+                  graphEdges.push(new Edge(pair.a, pair.b));
+                  missingEdges.splice(randomIndex, 1);
+              } else {
+                  clearInterval(connectionInterval);
+              }
+          }, 20);
+      }
+  
+      let topInterval, bottomInterval, leftInterval, rightInterval;
+      function startGraphAnimation() {
+          initGraph();
+          topCount = 0; bottomCount = 0; leftCount = 0; rightCount = 0;
+          topInterval = setInterval(() => {
+              if (topCount < topTotal) {
+                  addTopNode(topCount);
+                  topCount++;
+              } else {
+                  clearInterval(topInterval);
+              }
+          }, 500);
+  
+          setTimeout(() => {
+              bottomInterval = setInterval(() => {
+                  if (bottomCount < bottomTotal) {
+                      addBottomNode(bottomCount);
+                      bottomCount++;
+                  } else {
+                      clearInterval(bottomInterval);
+                      let topNodes = graphNodes.filter(n => n.type === "top");
+                      let bottomNodes = graphNodes.filter(n => n.type === "bottom");
+                      topNodes.forEach(topNode => {
+                          graphEdges.push(new Edge(topNode, randomChoice(bottomNodes)));
+                      });
+                      setTimeout(startLeftRight, 500);
+                  }
+              }, 500);
+          }, 250);
+      }
+  
+      function startLeftRight() {
+          leftInterval = setInterval(() => {
+              if (leftCount < leftTotal) {
+                  addLeftNode(leftCount);
+                  leftCount++;
+              } else {
+                  clearInterval(leftInterval);
+              }
+          }, 500);
+  
+          setTimeout(() => {
+              rightInterval = setInterval(() => {
+                  if (rightCount < rightTotal) {
+                      addRightNode(rightCount);
+                      rightCount++;
+                  } else {
+                      clearInterval(rightInterval);
+                      setTimeout(completeConnections, 500);
+                  }
+              }, 500);
+          }, 250);
+      }
+  
+      drawGraph();
+  
+      window.stopGraphAnimation = function() {
+          clearInterval(topInterval);
+          clearInterval(bottomInterval);
+          clearInterval(leftInterval);
+          clearInterval(rightInterval);
+          graphNodes = [];
+          graphEdges = [];
+          initGraph();
+      };
+  
+      window.startGraphAnimation = startGraphAnimation;
+  
+      window.addEventListener("resize", function() {
+          graphCanvas.width = window.innerWidth / 2;
+          graphCanvas.height = window.innerHeight;
+          drawGraph();
+      });
+  
+      initGraph();
+    });
+  </script>
+  
+</body>
+</html>
